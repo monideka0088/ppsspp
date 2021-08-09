@@ -979,14 +979,16 @@ public abstract class NativeActivity extends Activity {
 			}
 
 			// Don't passthrough back or menu button if from gamepad.
-			// Unfortunately it seems that Android overrides the input devices on these?
-			switch (sources) {
-			case InputDevice.SOURCE_GAMEPAD:
-			case InputDevice.SOURCE_JOYSTICK:
-			case InputDevice.SOURCE_DPAD:
+			// XInput device on Android returns source 1281 or 0x501, which equals GAMEPAD | KEYBOARD.
+			// Shield Remote returns 769 or 0x301 which equals DPAD | KEYBOARD.
+
+			if ((sources & InputDevice.SOURCE_GAMEPAD) == InputDevice.SOURCE_GAMEPAD ||
+					(sources & InputDevice.SOURCE_JOYSTICK) == InputDevice.SOURCE_JOYSTICK ||
+					(sources & InputDevice.SOURCE_DPAD) == InputDevice.SOURCE_DPAD)
+			{
 				passThrough = false;
-				break;
 			}
+			Log.i(TAG, "Input event device sources: " + sources);
 
 			if (!passThrough) {
 				switch (event.getAction()) {
@@ -1060,18 +1062,18 @@ public abstract class NativeActivity extends Activity {
 		switch (keyCode) {
 		case KeyEvent.KEYCODE_BACK:
 			if (event.isAltPressed()) {
-				NativeApp.keyDown(0, 1004, repeat); // special custom keycode for the O button on Xperia Play
+				NativeApp.keyDown(InputDeviceState.deviceId, 1004, repeat); // special custom keycode for the O button on Xperia Play
 			} else if (NativeApp.isAtTopLevel()) {
  				Log.i(TAG, "IsAtTopLevel returned true.");
 				// Pass through the back event.
 				return super.onKeyDown(keyCode, event);
 			} else {
-				NativeApp.keyDown(0, keyCode, repeat);
+				NativeApp.keyDown(InputDeviceState.deviceId, keyCode, repeat);
 			}
 			return true;
 		case KeyEvent.KEYCODE_MENU:
 		case KeyEvent.KEYCODE_SEARCH:
-			NativeApp.keyDown(0, keyCode, repeat);
+			NativeApp.keyDown(InputDeviceState.deviceId, keyCode, repeat);
 			return true;
 
 		case KeyEvent.KEYCODE_DPAD_UP:
@@ -1088,7 +1090,7 @@ public abstract class NativeActivity extends Activity {
 			// send the rest of the keys through.
 			// TODO: get rid of the three special cases above by adjusting the native side of the code.
 			// Log.d(TAG, "Key down: " + keyCode + ", KeyEvent: " + event);
-			return NativeApp.keyDown(0, keyCode, repeat);
+			return NativeApp.keyDown(InputDeviceState.deviceId, keyCode, repeat);
 		}
 	}
 
