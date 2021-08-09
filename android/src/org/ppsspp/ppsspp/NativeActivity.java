@@ -912,7 +912,6 @@ public abstract class NativeActivity extends Activity {
 		}
 	}
 
-	// We simply grab the first input device to produce an event and ignore all others that are connected.
 	@TargetApi(Build.VERSION_CODES.GINGERBREAD)
 	private InputDeviceState getInputDeviceState(InputEvent event) {
 		InputDevice device = event.getDevice();
@@ -967,17 +966,20 @@ public abstract class NativeActivity extends Activity {
 			// Let's let back and menu through to dispatchKeyEvent.
 			boolean passThrough = false;
 
+			int sources = event.getSource();
+
 			switch (event.getKeyCode()) {
 			case KeyEvent.KEYCODE_BACK:
 			case KeyEvent.KEYCODE_MENU:
 				passThrough = true;
+				Log.i(TAG, "Passing through key, source = " + sources);
 				break;
 			default:
 				break;
 			}
 
-			// Don't passthrough back button if gamepad.
-			int sources = event.getSource();
+			// Don't passthrough back or menu button if from gamepad.
+			// Unfortunately it seems that Android overrides the input devices on these?
 			switch (sources) {
 			case InputDevice.SOURCE_GAMEPAD:
 			case InputDevice.SOURCE_JOYSTICK:
@@ -1060,7 +1062,7 @@ public abstract class NativeActivity extends Activity {
 			if (event.isAltPressed()) {
 				NativeApp.keyDown(0, 1004, repeat); // special custom keycode for the O button on Xperia Play
 			} else if (NativeApp.isAtTopLevel()) {
-				Log.i(TAG, "IsAtTopLevel returned true.");
+ 				Log.i(TAG, "IsAtTopLevel returned true.");
 				// Pass through the back event.
 				return super.onKeyDown(keyCode, event);
 			} else {
@@ -1078,6 +1080,7 @@ public abstract class NativeActivity extends Activity {
 		case KeyEvent.KEYCODE_DPAD_RIGHT:
 			// Joysticks are supported in Honeycomb MR1 and later via the onGenericMotionEvent method.
 			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB_MR1 && event.getSource() == InputDevice.SOURCE_JOYSTICK) {
+				// Pass through / ignore
 				return super.onKeyDown(keyCode, event);
 			}
 			// Fall through
